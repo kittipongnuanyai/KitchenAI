@@ -4,6 +4,7 @@ import '../data/ai_service.dart';
 import '../data/gemini_client.dart';
 import '../models/menu_suggestion.dart';
 import '../widgets/error_box.dart';
+import '../widgets/waiting_indicator.dart';
 import '../widgets/menu_card.dart';
 
 /// หน้า "พิมพ์วัตถุดิบ" → ส่งให้ AI → แสดงเมนูแนะนำ
@@ -123,7 +124,7 @@ class _IngredientsScreenState extends State<IngredientsScreen> {
           ),
           const SizedBox(height: 16),
           // ---- ส่วนแสดงผล: กำลังโหลด / ผิดพลาด / ผลลัพธ์ ----
-          if (_loading) const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
+          if (_loading) const WaitingIndicator(),
           if (_error != null) ErrorBox(message: _error!, onRetry: _ask),
           if (_result != null) ..._buildResult(_result!),
         ],

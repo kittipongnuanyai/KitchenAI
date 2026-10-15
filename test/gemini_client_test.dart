@@ -48,6 +48,7 @@ void main() {
     expect(body['contents'][0]['parts'][0]['text'], 'ทดสอบ');
     expect(body['system_instruction']['parts'][0]['text'], 'คุณคือเชฟ');
     expect(body['generationConfig'].containsKey('responseSchema'), isFalse);
+    expect(body['generationConfig']['thinkingConfig']['thinkingLevel'], 'low'); // ลดเวลารอ
   });
 
   test('แนบรูปเป็น inline_data (base64) และบังคับ JSON เมื่อส่ง schema', () async {

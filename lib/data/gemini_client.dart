@@ -73,6 +73,8 @@ class GeminiClient {
       'generationConfig': {
         'temperature': temperature,
         'maxOutputTokens': 8192,
+        // ลดเวลาคิดของโมเดล (ไม่ใส่ = medium ซึ่งช้ากว่ามาก)
+        if (kThinkingLevel.isNotEmpty) 'thinkingConfig': {'thinkingLevel': kThinkingLevel},
         if (responseSchema != null) 'responseMimeType': 'application/json',
         if (responseSchema != null) 'responseSchema': responseSchema,
       },
