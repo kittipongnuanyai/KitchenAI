@@ -313,6 +313,7 @@ step(4, "เข้าใจ Gemini API: JSON ที่ส่งไป และ 
   "generationConfig": {                         // ตัวเลือกการตอบ
     "temperature": 0.7,                         // 0 = ตอบนิ่ง ๆ เหมือนเดิม · 1-2 = สร้างสรรค์/สุ่มมากขึ้น
     "maxOutputTokens": 8192,                    // เพดานความยาวคำตอบ
+    "thinkingConfig": { "thinkingLevel": "low" },// Gemini 3.x "คิดก่อนตอบ" ค่าเริ่มต้น medium ช้ามาก → ลดเป็น low
     "responseMimeType": "application/json",     // (ไม่บังคับ) บังคับให้ตอบเป็น JSON ล้วน
     "responseSchema": { "type": "object", ... } // (ไม่บังคับ) โครงสร้าง JSON ที่ต้องการ
   }
@@ -321,6 +322,7 @@ step(4, "เข้าใจ Gemini API: JSON ที่ส่งไป และ 
          [c("system_instruction"), "ข้อความบอกบทบาท กติกา ภาษา รูปแบบ", "เขียนครั้งเดียวใช้กับทุกคำถาม ทำให้คำตอบนิ่งและเป็นแนวเดียวกัน (ของเราอยู่ใน prompts.dart)"],
          [c("contents[].parts[]"), "อาร์เรย์ของ " + c("{text}") + " หรือ " + c("{inline_data}"), "ส่งรูปกับข้อความไปพร้อมกันได้ = multimodal · รูปต้องเป็น base64 ไม่ใช่ URL"],
          [c("temperature"), "0–2", "งาน \"ดูรูปแล้วบอกว่ามีอะไร\" ใช้ค่าต่ำ (0.2) · งาน \"คิดเมนู\" ใช้ 0.7 ให้มีความหลากหลาย"],
+         [c("thinkingConfig.thinkingLevel"), c("low") + " / " + c("medium") + " / " + c("high"), "โมเดล Gemini 3.x จะ \"คิดในใจ\" ก่อนตอบ ยิ่งระดับสูงยิ่งฉลาดแต่ช้าและกิน token — งานแนะนำเมนูใช้ low พอ (ไม่ใส่ = medium ซึ่งเคยรอเกิน 90 วินาที)"],
          [c("responseSchema"), "JSON Schema แบบย่อ (type/properties/items/required/enum)", "ไม่ต้องเขียน regex แกะคำตอบ — AI ตอบตรงโครงสร้าง แปลงด้วย " + c("jsonDecode") + " ได้เลย"],
      ])
      + box("learn", "ทำไม key ต้องอยู่ใน header ไม่ใช่ใน URL",
@@ -367,6 +369,7 @@ step(5, "เขียน GeminiClient: ส่งคำขอและแกะ�
      + h3("5.2 ประกอบ body")
      + part_block("lib/data/gemini_client.dart", "    // 2) ประกอบ body", "    // 3) ยิง HTTP POST", note="2/5")
      + ul("เทียบกับ JSON ใน Step 4.1 ทีละช่อง ชื่อช่องต้องสะกดเป๊ะ (Gemini รับทั้ง " + c("system_instruction") + " และ " + c("systemInstruction") + " แต่ " + c("generationConfig") + " ต้องเป็น camelCase)",
+          c("thinkingConfig") + " อ่านจาก " + c("kThinkingLevel") + " ใน ai_config.dart — ถ้าตอบช้าหรือเร็วไป แก้ที่เดียว",
           "ใช้ collection if อีกครั้งเพื่อใส่ " + c("responseMimeType") + "/" + c("responseSchema") + " เฉพาะตอนที่ผู้เรียกส่ง schema มา — ถ้าใส่ " + c("responseSchema: null") + " ไป Gemini จะตอบ 400")
      + h3("5.3 ยิง HTTP POST และดักข้อผิดพลาดระดับเครือข่าย")
      + part_block("lib/data/gemini_client.dart", "    // 3) ยิง HTTP POST", "    // 4) ตรวจสถานะ HTTP", note="3/5")
@@ -423,7 +426,7 @@ step(6, "หน้า \"เมนูจากวัตถุดิบ\": prompt,
           "ส่วน build() ให้มาแล้ว: มันดูตัวแปร 3 ตัว " + c("_loading / _error / _result") + " แล้วเลือกวาด spinner / ErrorBox / การ์ดเมนู ตามลำดับ — คุณแค่ทำให้ตัวแปร 3 ตัวนี้มีค่าถูกต้อง")
      + h3("6.4 รันจริง")
      + ol("รันแอป (โหมดสาธิตปิด, key ใส่แล้ว) → \"พิมพ์วัตถุดิบที่มี\" → พิมพ์ " + c("ไข่, หมูสับ, กระเทียม") + " กด Enter (พิมพ์หลายอย่างคั่นด้วย , ได้) → เงื่อนไข \"ไม่กินเผ็ด\" → กดปุ่ม",
-          "รอ 5–15 วินาที จะได้ 3 การ์ด การ์ดแรกขยายอยู่ กดการ์ดอื่นเพื่อขยาย สังเกตป้าย \"ของครบ\" / \"ซื้อเพิ่ม n\"",
+          "รอ 5–20 วินาที (มีตัวนับวินาทีให้ดูว่ายังทำงานอยู่) จะได้ 3 การ์ด การ์ดแรกขยายอยู่ กดการ์ดอื่นเพื่อขยาย สังเกตป้าย \"ของครบ\" / \"ซื้อเพิ่ม n\"",
           "กดปุ่มซ้ำ → คำตอบไม่เหมือนเดิม (temperature 0.7) ลองแก้เป็น 0 ใน " + c("generate(... temperature: ...)") + " ดูว่าต่างไหม",
           "ลบวัตถุดิบออกให้หมดแล้วกด → ต้องได้ SnackBar เตือน ไม่ยิงคำขอ")
      + fig(("06_ingredients_filled", "กรอกวัตถุดิบและเงื่อนไข"), ("07_ingredients_loading", "ระหว่างรอ AI"), ("08_ingredients_result", "ผลลัพธ์ (ภาพจากโหมดสาธิต)"))
@@ -480,6 +483,7 @@ step(8, "ตรวจสอบรอบสุดท้าย แก้ปัญ�
          ["กดปุ่มแล้วไม่มีอะไรเกิดขึ้น / SnackBar \"ยังไม่ได้เขียน\"", "ยังไม่ได้ลบโค้ด TODO ใน starter", "ลบ SnackBar/throw UnimplementedError ออกให้หมด"],
          ["\"API key ไม่ถูกต้อง\" ทั้งที่วางถูก", "มีช่องว่าง/บรรทัดใหม่ติดมาตอน copy · key ถูกลบใน AI Studio", "พิมพ์ใหม่ · สร้าง key ใหม่"],
          ["429 บ่อย", "ทั้งห้องใช้ Wi-Fi เดียวกัน? ไม่เกี่ยว — โควตานับต่อ key · กดถี่เกินโควตาต่อนาที", "รอ 1 นาที · เปลี่ยน kGeminiModel เป็นรุ่น lite"],
+         ["\"AI ตอบช้าเกินไป (เกิน 90 วินาที)\" / รอนานมาก", "โมเดล 3.x คิดนานเพราะ thinkingLevel สูง หรือ Google คนเยอะ", "ตรวจว่า body มี thinkingConfig (Step 5.2) · ลด kThinkingLevel เป็น low · เปลี่ยนเป็น gemini-3.5-flash-lite · ย่อรูปให้เล็กลง"],
          ["404 ไม่พบโมเดล", "Google ปลดระวางชื่อโมเดลนั้นแล้ว", "เปิด ai.google.dev/gemini-api/docs/models เลือกรุ่น Flash ปัจจุบัน แก้ ai_config.dart"],
          ["\"อ่านคำตอบของ AI ไม่ได้: FormatException\"", "AI ตอบ JSON ไม่ครบ (ถูกตัดที่ maxOutputTokens) หรือไม่ได้ส่ง schema", "เพิ่ม maxOutputTokens · ลดจำนวนเมนู · ตรวจว่าส่ง responseSchema"],
          ["หน้ารูป: 400 Invalid argument / Unsupported MIME", "mime_type ไม่ตรงกับไฟล์ (เช่น HEIC จาก iPhone)", "ตั้ง imageQuality ให้ image_picker แปลงเป็น JPEG หรือ map HEIC → image/heic"],
