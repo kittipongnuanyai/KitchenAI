@@ -1,0 +1,13 @@
+# กติกาตรวจโค้ด (lint) ของโปรเจกต์ — ใช้ชุดมาตรฐานของ Flutter
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+
+linter:
+  rules:
+    # ปิดกฎนี้เพราะในคู่มือเราใช้ `if (x != null) 'key': x` ซึ่งอ่านง่ายกว่าสำหรับผู้เริ่มต้น
+    use_null_aware_elements: false
