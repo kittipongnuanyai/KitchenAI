@@ -1,5 +1,3 @@
-// ignore_for_file: unused_import, unused_field, unused_element, prefer_final_fields, unused_local_variable
-// (คำเตือนพวกนี้จะหายไปเองเมื่อเขียน TODO ครบ — ลบบรรทัดนี้ได้เมื่อทำเสร็จ)
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -31,13 +29,20 @@ class _PhotoScreenState extends State<PhotoScreen> {
 
   /// เปิดกล้องหรือคลังรูป แล้วย่อรูปให้เล็กลงก่อนส่ง (ประหยัดเน็ตและโควตา)
   Future<void> _pickImage(ImageSource source) async {
-    // TODO(Step 7.1): เปิดกล้อง/คลังด้วย _picker.pickImage(source: source, maxWidth: 1024,
-    //   maxHeight: 1024, imageQuality: 80) → ถ้า null (ผู้ใช้ยกเลิก) ให้ return
-    //   อ่าน bytes ด้วย file.readAsBytes() แล้ว setState: _imageBytes, _mimeType
-    //   (file.mimeType ?? _guessMime(file.name)) และล้าง _result/_error
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ยังไม่ได้เขียน _pickImage() — ทำตามคู่มือ Step 7')),
+    final XFile? file = await _picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
     );
+    if (file == null) return; // ผู้ใช้กดยกเลิก
+    final bytes = await file.readAsBytes();
+    setState(() {
+      _imageBytes = bytes;
+      _mimeType = file.mimeType ?? _guessMime(file.name);
+      _result = null;
+      _error = null;
+    });
   }
 
   static String _guessMime(String name) {
@@ -52,11 +57,24 @@ class _PhotoScreenState extends State<PhotoScreen> {
   Future<void> _analyze() async {
     final bytes = _imageBytes;
     if (bytes == null) return;
-    // TODO(Step 7.2): โครงเดียวกับ _ask() ในหน้า IngredientsScreen
-    //   แต่เรียก widget.ai.analyzePhoto(bytes, mimeType: _mimeType)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ยังไม่ได้เขียน _analyze() — ทำตามคู่มือ Step 7')),
-    );
+    setState(() {
+      _loading = true;
+      _error = null;
+      _result = null;
+    });
+    try {
+      final result = await widget.ai.analyzePhoto(bytes, mimeType: _mimeType);
+      if (!mounted) return;
+      setState(() => _result = result);
+    } on AiException catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.message);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'อ่านคำตอบของ AI ไม่ได้: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   /// เอาชื่อของที่ AI เห็น ไปเปิดหน้า "เมนูจากวัตถุดิบ"

@@ -1,5 +1,3 @@
-// ignore_for_file: unused_import, unused_field, unused_element, prefer_final_fields, unused_local_variable
-// (คำเตือนพวกนี้จะหายไปเองเมื่อเขียน TODO ครบ — ลบบรรทัดนี้ได้เมื่อทำเสร็จ)
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -52,19 +50,59 @@ class GeminiClient {
       throw AiException('ยังไม่ได้ตั้งค่า API key — ไปที่หน้า "ตั้งค่า" ก่อน');
     }
 
-    // TODO(Step 5.1): ประกอบ parts = [ {'text': prompt}, (ถ้ามีรูป) {'inline_data': {...}} ]
+    // 1) ประกอบ "ชิ้นส่วน" ของคำถาม: ข้อความ และรูป (ถ้ามี)
+    final parts = <Map<String, dynamic>>[
+      {'text': prompt},
+      if (imageBytes != null)
+        {
+          'inline_data': {'mime_type': imageMimeType, 'data': base64Encode(imageBytes)},
+        },
+    ];
 
-    // TODO(Step 5.2): ประกอบ body ตามรูปแบบของ Gemini
-    //   system_instruction (ถ้ามี) · contents · generationConfig (temperature, maxOutputTokens,
-    //   และถ้ามี responseSchema ให้ใส่ responseMimeType + responseSchema)
+    // 2) ประกอบ body ตามรูปแบบที่ Gemini ต้องการ
+    final body = <String, dynamic>{
+      if (systemInstruction != null)
+        'system_instruction': {
+          'parts': [
+            {'text': systemInstruction},
+          ],
+        },
+      'contents': [
+        {'role': 'user', 'parts': parts},
+      ],
+      'generationConfig': {
+        'temperature': temperature,
+        'maxOutputTokens': 8192,
+        if (responseSchema != null) 'responseMimeType': 'application/json',
+        if (responseSchema != null) 'responseSchema': responseSchema,
+      },
+    };
 
-    // TODO(Step 5.3): ยิง HTTP POST ไปที่ endpoint พร้อม header 'x-goog-api-key'
-    //   ครอบด้วย try/catch: TimeoutException, SocketException, http.ClientException → AiException
+    // 3) ยิง HTTP POST — key ส่งใน header ไม่ใส่ใน URL
+    http.Response res;
+    try {
+      res = await _client
+          .post(
+            endpoint,
+            headers: {'Content-Type': 'application/json', 'x-goog-api-key': apiKey},
+            body: jsonEncode(body),
+          )
+          .timeout(kAiTimeout);
+    } on TimeoutException {
+      throw AiException('AI ตอบช้าเกินไป (เกิน ${kAiTimeout.inSeconds} วินาที) ลองใหม่อีกครั้ง');
+    } on SocketException {
+      throw AiException('เชื่อมต่ออินเทอร์เน็ตไม่ได้ ตรวจสอบ Wi-Fi หรือเน็ตมือถือ');
+    } on http.ClientException catch (e) {
+      throw AiException('ส่งคำขอไม่สำเร็จ: ${e.message}');
+    }
 
-    // TODO(Step 5.4): ถ้า statusCode != 200 → throw AiException(describeHttpError(...), statusCode)
+    // 4) ตรวจสถานะ HTTP
+    if (res.statusCode != 200) {
+      throw AiException(describeHttpError(res.statusCode, res.body), res.statusCode);
+    }
 
-    // TODO(Step 5.5): แกะข้อความด้วย extractText(jsonDecode(res.body))
-    throw UnimplementedError('ยังไม่ได้เขียน generate() — ทำตามคู่มือ Step 5');
+    // 5) แกะข้อความออกจาก JSON ที่ตอบกลับ
+    return extractText(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   /// แปลงรหัสสถานะ HTTP + body เป็นข้อความภาษาไทย
@@ -100,9 +138,24 @@ class GeminiClient {
   ///
   /// รูปแบบ: { "candidates": [ { "content": { "parts": [ { "text": "..." } ] }, "finishReason": "STOP" } ] }
   static String extractText(Map<String, dynamic> json) {
-    // TODO(Step 5.6): ดึง candidates[0].content.parts[*].text มาต่อกัน
-    //   - ถ้า promptFeedback.blockReason มีค่า → throw AiException('AI ปฏิเสธคำถามนี้ ...')
-    //   - ถ้า candidates ว่าง หรือข้อความว่าง → throw AiException พร้อม finishReason
-    throw UnimplementedError('ยังไม่ได้เขียน extractText() — ทำตามคู่มือ Step 5');
+    final feedback = json['promptFeedback'] as Map<String, dynamic>?;
+    if (feedback?['blockReason'] != null) {
+      throw AiException('AI ปฏิเสธคำถามนี้ (${feedback!['blockReason']}) ลองเปลี่ยนคำถาม');
+    }
+    final candidates = json['candidates'] as List<dynamic>?;
+    if (candidates == null || candidates.isEmpty) {
+      throw AiException('AI ไม่ได้ส่งคำตอบกลับมา');
+    }
+    final first = candidates.first as Map<String, dynamic>;
+    final parts = (first['content']?['parts'] as List<dynamic>?) ?? const [];
+    final text = parts
+        .map((p) => (p as Map<String, dynamic>)['text'])
+        .whereType<String>()
+        .join();
+    if (text.trim().isEmpty) {
+      final reason = first['finishReason'] ?? 'ไม่ทราบสาเหตุ';
+      throw AiException('AI ตอบกลับมาว่างเปล่า (finishReason: $reason)');
+    }
+    return text;
   }
 }

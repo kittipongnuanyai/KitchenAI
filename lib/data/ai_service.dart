@@ -1,5 +1,3 @@
-// ignore_for_file: unused_import, unused_field, unused_element, prefer_final_fields, unused_local_variable
-// (คำเตือนพวกนี้จะหายไปเองเมื่อเขียน TODO ครบ — ลบบรรทัดนี้ได้เมื่อทำเสร็จ)
 import 'dart:typed_data';
 
 import '../models/menu_suggestion.dart';
@@ -29,16 +27,25 @@ class GeminiAiService implements AiService {
 
   @override
   Future<MenuResult> suggestMenus(List<String> ingredients, {String? extra}) async {
-    // TODO(Step 6.2): เรียก client.generate(prompt: buildMenuPrompt(...), systemInstruction: ...,
-    //   responseSchema: kMenuResponseSchema) แล้วแปลงด้วย MenuResult.fromJsonText(...)
-    throw UnimplementedError('ยังไม่ได้เขียน suggestMenus() — ทำตามคู่มือ Step 6');
+    final text = await client.generate(
+      prompt: buildMenuPrompt(ingredients, extra: extra),
+      systemInstruction: kChefSystemInstruction,
+      responseSchema: kMenuResponseSchema,
+    );
+    return MenuResult.fromJsonText(text);
   }
 
   @override
   Future<PhotoAnalysis> analyzePhoto(Uint8List imageBytes, {String mimeType = 'image/jpeg'}) async {
-    // TODO(Step 7.3): เหมือน suggestMenus แต่ส่ง imageBytes + imageMimeType และใช้ kPhotoPrompt,
-    //   kPhotoResponseSchema, temperature ต่ำ (0.2) แล้วแปลงด้วย PhotoAnalysis.fromJsonText(...)
-    throw UnimplementedError('ยังไม่ได้เขียน analyzePhoto() — ทำตามคู่มือ Step 7');
+    final text = await client.generate(
+      prompt: kPhotoPrompt,
+      systemInstruction: kChefSystemInstruction,
+      imageBytes: imageBytes,
+      imageMimeType: mimeType,
+      responseSchema: kPhotoResponseSchema,
+      temperature: 0.2, // งาน "ดูรูปแล้วบอก" ต้องการความแม่น ไม่ต้องการความสร้างสรรค์
+    );
+    return PhotoAnalysis.fromJsonText(text);
   }
 
   @override

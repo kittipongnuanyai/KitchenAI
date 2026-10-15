@@ -1,5 +1,3 @@
-// ignore_for_file: unused_import, unused_field, unused_element, prefer_final_fields, unused_local_variable
-// (คำเตือนพวกนี้จะหายไปเองเมื่อเขียน TODO ครบ — ลบบรรทัดนี้ได้เมื่อทำเสร็จ)
 import 'package:flutter/material.dart';
 
 import '../data/ai_service.dart';
@@ -54,13 +52,25 @@ class _IngredientsScreenState extends State<IngredientsScreen> {
           .showSnackBar(const SnackBar(content: Text('ใส่วัตถุดิบอย่างน้อย 1 อย่างก่อน')));
       return;
     }
-    // TODO(Step 6.3): 1) setState เริ่มโหลด ล้าง error/result เก่า
-    //   2) await widget.ai.suggestMenus(_ingredients, extra: _extraCtrl.text)
-    //   3) on AiException → _error = e.message · catch อื่น ๆ → 'อ่านคำตอบของ AI ไม่ได้'
-    //   4) finally → _loading = false (เช็ก mounted ก่อน setState ทุกครั้ง)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ยังไม่ได้เขียน _ask() — ทำตามคู่มือ Step 6')),
-    );
+    setState(() {
+      _loading = true;
+      _error = null;
+      _result = null;
+    });
+    try {
+      final result = await widget.ai.suggestMenus(_ingredients, extra: _extraCtrl.text);
+      if (!mounted) return;
+      setState(() => _result = result);
+    } on AiException catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.message);
+    } catch (e) {
+      // เช่น AI ตอบ JSON ผิดรูปแบบ → FormatException
+      if (!mounted) return;
+      setState(() => _error = 'อ่านคำตอบของ AI ไม่ได้: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
