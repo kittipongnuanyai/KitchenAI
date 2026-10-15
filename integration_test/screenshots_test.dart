@@ -66,7 +66,7 @@ void main() {
     await binding.takeScreenshot('07_ingredients_loading');
     await tester.pumpAndSettle(const Duration(seconds: 2));
     await shot(tester, '08_ingredients_result');
-    await tester.scrollUntilVisible(find.text('วิธีทำ'), 200);
+    await tester.dragUntilVisible(find.text('วิธีทำ').first, find.byType(ListView), const Offset(0, -300));
     await shot(tester, '09_ingredients_result_steps');
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -80,9 +80,9 @@ void main() {
     await shot(tester, '11_photo_picked');
     await tester.tap(find.text('ให้ AI วิเคราะห์รูป'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
-    await tester.scrollUntilVisible(find.textContaining('แนะนำเมนูจากของ'), 200);
+    await tester.dragUntilVisible(find.textContaining('แนะนำเมนูจากของ').first, find.byType(ListView), const Offset(0, -300));
     await shot(tester, '12_photo_result');
-    await tester.tap(find.textContaining('แนะนำเมนูจากของ'));
+    await tester.tap(find.textContaining('แนะนำเมนูจากของ').first);
     await tester.pumpAndSettle();
     await shot(tester, '13_photo_to_ingredients');
   });

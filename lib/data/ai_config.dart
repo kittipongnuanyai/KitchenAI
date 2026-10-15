@@ -7,6 +7,11 @@ const String kGeminiModel = 'gemini-3.8-flash';
 /// URL หลักของ Gemini API (เวอร์ชัน v1beta)
 const String kGeminiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
+/// ระดับ "การคิดก่อนตอบ" ของโมเดล Gemini 3.x: 'low' | 'medium' | 'high'
+/// ค่าเริ่มต้นของ Google คือ medium ซึ่งช้า (บางครั้งเกิน 1 นาที) งานแนะนำเมนูใช้ low ก็พอ
+/// ตั้งเป็น '' เพื่อไม่ส่งค่านี้ (ใช้ค่าเริ่มต้นของโมเดล)
+const String kThinkingLevel = 'low';
+
 /// เวลาสูงสุดที่รอ AI ตอบ
 const Duration kAiTimeout = Duration(seconds: 90);
 

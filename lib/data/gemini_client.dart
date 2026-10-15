@@ -56,7 +56,7 @@ class GeminiClient {
 
     // TODO(Step 5.2): ประกอบ body ตามรูปแบบของ Gemini
     //   system_instruction (ถ้ามี) · contents · generationConfig (temperature, maxOutputTokens,
-    //   และถ้ามี responseSchema ให้ใส่ responseMimeType + responseSchema)
+    //   thinkingConfig.thinkingLevel = kThinkingLevel, และถ้ามี responseSchema ให้ใส่ responseMimeType + responseSchema)
 
     // TODO(Step 5.3): ยิง HTTP POST ไปที่ endpoint พร้อม header 'x-goog-api-key'
     //   ครอบด้วย try/catch: TimeoutException, SocketException, http.ClientException → AiException

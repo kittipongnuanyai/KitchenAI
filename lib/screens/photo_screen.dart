@@ -9,6 +9,7 @@ import '../data/ai_service.dart';
 import '../data/gemini_client.dart';
 import '../models/photo_analysis.dart';
 import '../widgets/error_box.dart';
+import '../widgets/waiting_indicator.dart';
 import 'ingredients_screen.dart';
 
 /// หน้า "ถ่ายรูป" → ส่งรูปให้ AI → แสดงของที่เห็น → ต่อยอดเป็นเมนู
@@ -133,7 +134,7 @@ class _PhotoScreenState extends State<PhotoScreen> {
             label: Text(_loading ? 'AI กำลังดูรูป...' : 'ให้ AI วิเคราะห์รูป'),
           ),
           const SizedBox(height: 16),
-          if (_loading) const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator())),
+          if (_loading) const WaitingIndicator(),
           if (_error != null) ErrorBox(message: _error!, onRetry: _analyze),
           if (_result != null) ..._buildResult(_result!),
         ],
